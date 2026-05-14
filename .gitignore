@@ -1,0 +1,21 @@
+# 环境变量（包含密钥，绝对不能提交）
+.env
+.env.local
+.env.*.local
+
+# 依赖
+node_modules/
+
+# 数据库文件（包含真实数据）
+*.db
+
+# 前端构建产物
+dist/
+
+# 系统文件
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
