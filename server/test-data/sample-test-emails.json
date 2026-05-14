@@ -1,0 +1,143 @@
+[
+  {
+    "name": "Celia",
+    "account": "@celia_official",
+    "phase": "提报待审核",
+    "price": "$500→$400",
+    "reportBrand": "M·A·C",
+    "emails": ["celia@gmail.com", "celia.work@outlook.com"],
+    "phaseHistory": [
+      { "from": "初洽", "to": "谈价格", "time": "2026/04/20 09:15" },
+      { "from": "谈价格", "to": "提报待审核", "time": "2026/04/25 14:30" }
+    ],
+    "threads": [
+      { "date": "2026-04-20", "direction": "inbound", "subject": "Re: Brand Collaboration Inquiry", "content": "Hi! Thanks for reaching out. I'm interested in collaborating with your brand. My rate for a dedicated video is $500. Let me know if that works for you." },
+      { "date": "2026-04-21", "direction": "outbound", "subject": "Re: Budget Discussion", "content": "Hi Celia, thanks for your reply! $500 is a bit over our budget for this campaign. Would you consider $350? We can also offer free product samples worth $200." },
+      { "date": "2026-04-23", "direction": "inbound", "subject": "Re: Budget Discussion", "content": "I understand the budget constraint. How about we meet in the middle at $400? And I would love to try your samples before creating content. Can you ship to my address in LA?" },
+      { "date": "2026-04-25", "direction": "outbound", "subject": "Sample Shipment Confirmation", "content": "Hi Celia! The samples have been shipped to your LA address. Tracking number: 1Z999AA1234567890. Estimated delivery: April 28. Please confirm once received!" },
+      { "date": "2026-05-02", "direction": "inbound", "subject": "Re: Sample Shipment Confirmation", "content": "Samples received! Love the packaging and the product quality. I will start filming next week. What are the key talking points you want me to highlight?" },
+      { "date": "2026-05-10", "direction": "inbound", "subject": "Re: Key Talking Points", "content": "Got it, I will focus on the natural ingredients and the lightweight feel. Video should be ready by May 14. Will send you a preview before posting. Excited to work with you!" }
+    ]
+  },
+  {
+    "name": "Mike Johnson",
+    "account": "@mike_creator",
+    "phase": "提报已通过",
+    "price": "$300",
+    "emails": ["mike.biz@outlook.com", "mikejohnson.creator@gmail.com"],
+    "phaseHistory": [
+      { "from": "初洽", "to": "谈价格", "time": "2026/04/15 11:00" },
+      { "from": "谈价格", "to": "提报待审核", "time": "2026/04/18 16:20" },
+      { "from": "提报待审核", "to": "提报已通过", "time": "2026/04/22 10:00" }
+    ],
+    "threads": [
+      { "date": "2026-04-15", "direction": "inbound", "subject": "Interested in partnership", "content": "Hey team, I've been following your brand and would love to explore a partnership. My audience is mostly fitness enthusiasts, 200k followers on TikTok." },
+      { "date": "2026-04-18", "direction": "outbound", "subject": "Re: Interested in partnership", "content": "Hi Mike! Great to hear from you. Our fitness line would be a perfect fit. Our standard rate is $300 per video. Let me know your thoughts!" },
+      { "date": "2026-04-22", "direction": "inbound", "subject": "Re: Re: Interested in partnership", "content": "$300 works for me! Can you send over the product details and samples? I have a few video ideas already." },
+      { "date": "2026-05-01", "direction": "outbound", "subject": "Samples on the way + Product Info", "content": "Samples shipped! Here is the product info deck. Key ingredients: whey protein isolate, organic cocoa. Looking forward to your content!" },
+      { "date": "2026-05-10", "direction": "inbound", "subject": "Re: Samples on the way", "content": "Still waiting for the samples, tracking shows it is stuck in customs. Can you check on your end? I want to start filming ASAP." }
+    ]
+  },
+  {
+    "name": "Siti Nurhaliza",
+    "account": "@siti_beauty",
+    "phase": "提报待审核",
+    "price": "$800→$650",
+    "reportBrand": "Fenty Beauty",
+    "emails": ["siti.n@gmail.com", "siti.beauty@yahoo.com"],
+    "phaseHistory": [
+      { "from": "初洽", "to": "谈价格", "time": "2026/04/10 13:00" },
+      { "from": "谈价格", "to": "提报待审核", "time": "2026/04/25 09:30" }
+    ],
+    "threads": [
+      { "date": "2026-04-10", "direction": "inbound", "subject": "Collaboration offer", "content": "Hi, I received your DM on TikTok. Yes I'm open to collaboration! My rate is $800 for a review + tutorial video (usually 3-5 min)." },
+      { "date": "2026-04-14", "direction": "outbound", "subject": "Re: Collaboration offer", "content": "Hi Siti! We love your content. Budget-wise, we can do $650 - our campaign has multiple creators so the budget is split. Is that okay?" },
+      { "date": "2026-04-18", "direction": "inbound", "subject": "Re: Re: Collaboration offer", "content": "$650 is acceptable! Please send over the product and a brief. Also, when is the deadline for posting?" },
+      { "date": "2026-04-25", "direction": "outbound", "subject": "Product shipped + Campaign brief", "content": "Hi Siti! Product shipped via DHL. Deadline is June 15. Brief attached. Please confirm once you receive the package!" },
+      { "date": "2026-05-05", "direction": "inbound", "subject": "Re: Product shipped", "content": "Package received but one item (the serum) was leaking. Can you send a replacement? The other products are fine." }
+    ]
+  },
+  {
+    "name": "Anna Marie",
+    "account": "@anna_lifestyle",
+    "phase": "合作中",
+    "price": "$450",
+    "reportBrand": "Glossier",
+    "emails": ["anna.m@yahoo.com"],
+    "phaseHistory": [
+      { "from": "初洽", "to": "谈价格", "time": "2026/03/10 10:00" },
+      { "from": "谈价格", "to": "提报待审核", "time": "2026/04/02 15:00" },
+      { "from": "提报待审核", "to": "提报已通过", "time": "2026/04/15 11:30" },
+      { "from": "提报已通过", "to": "合作中", "time": "2026/04/20 14:00" }
+    ],
+    "threads": [
+      { "date": "2026-03-10", "direction": "inbound", "subject": "Brand deal inquiry", "content": "Hi! Interested in your brand. I have 150k followers, mostly 18-25 female. What are your partnership terms?" },
+      { "date": "2026-04-02", "direction": "outbound", "subject": "Re: Brand deal inquiry", "content": "Great fit! Our campaign pays $450 per video with product gifting. We love your aesthetic. Ready to proceed?" },
+      { "date": "2026-04-20", "direction": "inbound", "subject": "Content draft for review", "content": "Here is my first draft video for the Glossier campaign! Let me know if any changes needed before I post." },
+      { "date": "2026-05-10", "direction": "inbound", "subject": "Posted! Here is the link", "content": "Video is live! The engagement is great so far, 10k views in the first hour! Will share the analytics later." }
+    ]
+  },
+  {
+    "name": "David Lee",
+    "account": "@david_lee",
+    "phase": "初洽",
+    "price": "待报价",
+    "emails": ["davidlee@gmail.com", "davidlee@hotmail.com"],
+    "threads": [
+      { "date": "2026-05-06", "direction": "inbound", "subject": "Re: Brand partnership opportunity", "content": "Thanks for the DM! I'd love to learn more about your brand and what kind of collaboration you're thinking of. My audience is mainly tech gadget reviewers." },
+      { "date": "2026-05-08", "direction": "outbound", "subject": "Re: Re: Brand partnership opportunity", "content": "Great! We are launching a new smart home device and think your audience would love it. What is your typical rate for a product review video?" }
+    ]
+  },
+  {
+    "name": "Luna Park",
+    "account": "@luna_kbeauty",
+    "phase": "已搁置",
+    "price": "$1200",
+    "reportNote": "报价过高，暂时搁置",
+    "emails": ["luna.p@naver.com", "lunapark_kr@gmail.com"],
+    "phaseHistory": [
+      { "from": "初洽", "to": "谈价格", "time": "2026/04/05 10:00" },
+      { "from": "谈价格", "to": "已搁置", "time": "2026/04/20 16:00" }
+    ],
+    "threads": [
+      { "date": "2026-04-05", "direction": "inbound", "subject": "Interested in K-beauty collab", "content": "Hello! I specialize in K-beauty reviews, 500k followers. Interested in your new skincare line. My rate is $1200 per video." },
+      { "date": "2026-04-08", "direction": "outbound", "subject": "Re: Interested in K-beauty collab", "content": "$1200 is significantly above our budget. Can we negotiate? Our typical rate is $300-$600 for this campaign." },
+      { "date": "2026-04-20", "direction": "inbound", "subject": "Re: Re: Interested in K-beauty collab", "content": "I understand, but $1200 is my minimum. Maybe we can revisit this in the future if your budget opens up. Best of luck!" }
+    ]
+  },
+  {
+    "name": "Carlos Mendez",
+    "account": "@carlos_fitness",
+    "phase": "合作完成",
+    "price": "$2000",
+    "reportBrand": "Nike",
+    "emails": ["carlos.m@hotmail.com"],
+    "phaseHistory": [
+      { "from": "初洽", "to": "谈价格", "time": "2026/03/01 08:00" },
+      { "from": "谈价格", "to": "提报待审核", "time": "2026/03/10 14:00" },
+      { "from": "提报待审核", "to": "提报已通过", "time": "2026/03/20 10:00" },
+      { "from": "提报已通过", "to": "合作中", "time": "2026/04/15 09:30" },
+      { "from": "合作中", "to": "合作完成", "time": "2026/04/28 16:45" }
+    ],
+    "threads": [
+      { "date": "2026-03-01", "direction": "inbound", "subject": "Fitness campaign inquiry", "content": "Hi Nike team, I would love to be part of your upcoming campaign. I have 800k followers in the fitness niche." },
+      { "date": "2026-04-15", "direction": "outbound", "subject": "Campaign confirmed + Next steps", "content": "We are happy to confirm you for the Summer 2026 campaign! Rate: $2000. Contract attached. Please sign and return." },
+      { "date": "2026-04-28", "direction": "inbound", "subject": "Re: Campaign confirmed", "content": "Signed contract attached. Video is posted and performing well! 200k views in 3 days. Thanks for the opportunity!" }
+    ]
+  },
+  {
+    "name": "Priya Sharma",
+    "account": "@priya_organic",
+    "phase": "谈价格",
+    "price": "$350",
+    "emails": ["priya.s@gmail.com", "priya.sharma@outlook.com"],
+    "phaseHistory": [
+      { "from": "初洽", "to": "谈价格", "time": "2026/04/25 11:00" }
+    ],
+    "threads": [
+      { "date": "2026-04-25", "direction": "inbound", "subject": "Re: Organic skincare collab", "content": "Hi! Thanks for reaching out. Your organic skincare line looks amazing. I would be happy to create content. What is your budget?" },
+      { "date": "2026-04-28", "direction": "outbound", "subject": "Re: Re: Organic skincare collab", "content": "We typically offer $350 per video. We also provide a full product kit ($150 value) and affiliate commission on sales." },
+      { "date": "2026-05-03", "direction": "inbound", "subject": "Re: Re: Re: Organic skincare collab", "content": "$350 sounds fair! Can we do $400 for two videos instead? I can do one review and one tutorial. Also interested in the affiliate program." }
+    ]
+  }
+]

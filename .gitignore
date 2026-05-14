@@ -19,3 +19,11 @@ Thumbs.db
 # IDE
 .vscode/
 .idea/
+
+# 敏感文件
+client_secret_*.json
+
+# 项目文档（不提交二进制大文件）
+*.pdf
+Prompt.txt
+test_emails.txt

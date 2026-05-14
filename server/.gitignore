@@ -1,0 +1,12 @@
+# 环境变量（包含密钥，绝对不能提交）
+.env
+
+# 依赖
+node_modules/
+
+# 数据库文件（包含真实数据）
+data.db
+
+# 系统文件
+.DS_Store
+Thumbs.db
