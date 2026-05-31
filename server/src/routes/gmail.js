@@ -3,6 +3,8 @@ import { syncEmails, getSyncStatus, discoverContacts, getDiscoverStatus } from '
 import { getAuthUrl, exchangeCode, isAuthorized, getStoredToken, saveToken, parseOAuthState } from '../services/oauth.js'
 import authMiddleware from '../middleware/auth.js'
 
+const FRONTEND_URL = process.env.FRONTEND_URL || 'https://crm.hys-crm.top'
+
 const router = Router()
 
 // 获取 Google OAuth 授权 URL（需登录，email 参数可选）
@@ -21,7 +23,7 @@ router.get('/oauth-callback', async (req, res) => {
   const { code, state } = req.query
 
   if (!code) {
-    return res.redirect('https://crm.hys-crm.top/email-settings?oauth=error&msg=' + encodeURIComponent('未收到授权码'))
+    return res.redirect(`${FRONTEND_URL}/email-settings?oauth=error&msg=` + encodeURIComponent('未收到授权码'))
   }
 
   try {
@@ -32,17 +34,17 @@ router.get('/oauth-callback', async (req, res) => {
     const targetEmail = email || process.env.GMAIL_EMAIL
 
     if (!userId) {
-      return res.redirect('https://crm.hys-crm.top/email-settings?oauth=error&msg=' + encodeURIComponent('授权状态无效'))
+      return res.redirect(`${FRONTEND_URL}/email-settings?oauth=error&msg=` + encodeURIComponent('授权状态无效'))
     }
 
     // 保存 token（关联到具体 email）
     saveToken(userId, targetEmail, tokenData)
 
     // 重定向时带上 email 参数，前端可用它触发自动同步
-    res.redirect(`https://crm.hys-crm.top/email-settings?oauth=success&email=${encodeURIComponent(targetEmail)}`)
+    res.redirect(`${FRONTEND_URL}/email-settings?oauth=success&email=${encodeURIComponent(targetEmail)}`)
   } catch (e) {
     console.error('[oauth] 回调处理失败:', e.message)
-    res.redirect('https://crm.hys-crm.top/email-settings?oauth=error&msg=' + encodeURIComponent(e.message))
+    res.redirect(`${FRONTEND_URL}/email-settings?oauth=error&msg=` + encodeURIComponent(e.message))
   }
 })
 
