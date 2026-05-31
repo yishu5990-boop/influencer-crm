@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { PHASES } from '../data/mockData'
-import { getInfluencers, createInfluencer, updateInfluencer } from '../utils/storage'
+import { getInfluencers, createInfluencer, updateInfluencer, deleteInfluencer } from '../utils/storage'
 
 const FILTER_TABS = [
   { key: 'all', label: '全部' },
@@ -49,10 +49,9 @@ export default function ReportManagement() {
   })
 
   const handlePhaseChange = async (id, newPhase) => {
-    const today = new Date().toISOString().split('T')[0]
-    await updateInfluencer(id, { phase: newPhase, lastContact: today })
+    await updateInfluencer(id, { phase: newPhase })
     setInfluencers((prev) =>
-      prev.map((inf) => (inf.id === id ? { ...inf, phase: newPhase, lastContact: today } : inf))
+      prev.map((inf) => (inf.id === id ? { ...inf, phase: newPhase } : inf))
     )
     setEditingPhaseId(null)
   }
@@ -73,6 +72,16 @@ export default function ReportManagement() {
     }
     setShowAddModal(false)
     setNewForm({ name: '', account: '', email: '', phase: '初洽' })
+  }
+
+  const handleDeleteInfluencer = async (inf) => {
+    if (!window.confirm(`确定要删除「${inf.name}」吗？\n\n该操作将同时删除该达人的所有邮件记录、阶段历史和 AI 总结，且无法恢复。`)) return
+    try {
+      await deleteInfluencer(inf.id)
+      setInfluencers((prev) => prev.filter((i) => i.id !== inf.id))
+    } catch (e) {
+      alert('删除失败：' + (e.message || '未知错误'))
+    }
   }
 
   if (loading) {
@@ -127,6 +136,12 @@ export default function ReportManagement() {
                     {inf.account} · {inf.email || (inf.emails && inf.emails[0]) || ''}
                   </div>
                 </div>
+                <span onClick={(e) => { e.stopPropagation(); handleDeleteInfluencer(inf) }}
+                  title="删除达人"
+                  style={{ cursor: 'pointer', fontSize: 18, color: 'var(--gray-300)', lineHeight: 1, padding: '2px 6px', borderRadius: 4, transition: 'all 0.15s', flexShrink: 0 }}
+                  onMouseOver={(e) => { e.currentTarget.style.color = '#ef4444'; e.currentTarget.style.background = '#fee2e2' }}
+                  onMouseOut={(e) => { e.currentTarget.style.color = 'var(--gray-300)'; e.currentTarget.style.background = 'transparent' }}
+                >×</span>
               </div>
 
               <div style={{ marginBottom: 12 }}>

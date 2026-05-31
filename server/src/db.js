@@ -177,6 +177,9 @@ function ensureTables() {
     )
   `)
 
+  // 迁移：为旧数据库补充 app_password 列
+  try { db.run('ALTER TABLE email_accounts ADD COLUMN app_password TEXT DEFAULT \'\'') } catch { /* 列已存在 */ }
+
   db.run(`
     CREATE TABLE IF NOT EXISTS oauth_tokens (
       id TEXT PRIMARY KEY,

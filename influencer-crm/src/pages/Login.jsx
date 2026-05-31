@@ -3,12 +3,12 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 
 export default function Login() {
-  const { login, register } = useAuth()
+  const { login, register, demoLogin } = useAuth()
   const navigate = useNavigate()
   const [isRegister, setIsRegister] = useState(false)
   const [name, setName] = useState('')
   const [email, setEmail] = useState('admin@crm.com')
-  const [password, setPassword] = useState('123456')
+  const [password, setPassword] = useState('7AayN6R9LtShXsFb')
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
 
@@ -59,6 +59,39 @@ export default function Login() {
           </div>
         )}
 
+        <button
+          onClick={async () => {
+            setError('')
+            setSubmitting(true)
+            try { await demoLogin(); navigate('/') }
+            catch (err) { setError(err.message) }
+            finally { setSubmitting(false) }
+          }}
+          disabled={submitting}
+          style={{
+            width: '100%', padding: '16px', border: 'none', borderRadius: 12, cursor: 'pointer',
+            background: 'linear-gradient(135deg, #8b5cf6, #6366f1)',
+            color: '#fff', marginBottom: 16, transition: 'opacity 0.2s',
+          }}
+          onMouseOver={(e) => { e.currentTarget.style.opacity = '0.9' }}
+          onMouseOut={(e) => { e.currentTarget.style.opacity = '1' }}
+        >
+          <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 4 }}>
+            {submitting ? '⏳ 登录中...' : '👁 一键演示登录'}
+          </div>
+          <div style={{ fontSize: 11, opacity: 0.85 }}>
+            账号：admin@crm.com ｜ 密码：7AayN6R9LtShXsFb
+          </div>
+        </button>
+
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16,
+        }}>
+          <div style={{ flex: 1, height: '1px', background: 'var(--gray-200)' }} />
+          <span style={{ fontSize: 12, color: 'var(--gray-400)' }}>或手动登录</span>
+          <div style={{ flex: 1, height: '1px', background: 'var(--gray-200)' }} />
+        </div>
+
         <form onSubmit={handleSubmit}>
           {isRegister && (
             <div className="form-group">
@@ -107,7 +140,7 @@ export default function Login() {
             marginTop: 20, padding: '12px', background: 'var(--gray-50)',
             borderRadius: 8, fontSize: 12, color: 'var(--gray-400)', textAlign: 'center',
           }}>
-            默认账号：admin@crm.com / 123456
+            账号：admin@crm.com / 密码：7AayN6R9LtShXsFb
           </div>
         )}
       </div>

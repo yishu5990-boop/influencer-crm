@@ -21,15 +21,15 @@ router.get('/accounts', async (req, res) => {
 router.post('/accounts', async (req, res) => {
   try {
     const db = await getDb()
-    const { email, provider } = req.body
+    const { email, provider, appPassword } = req.body
     if (!email || !provider) {
       return res.status(400).json({ error: '请填写邮箱和服务商' })
     }
 
     const id = 'email_acc_' + Date.now()
     run(
-      'INSERT INTO email_accounts (id, user_id, email, provider) VALUES (?, ?, ?, ?)',
-      [id, req.userId, email.trim(), provider]
+      'INSERT INTO email_accounts (id, user_id, email, provider, app_password) VALUES (?, ?, ?, ?, ?)',
+      [id, req.userId, email.trim(), provider, appPassword || '']
     )
 
     const acc = queryOne('SELECT * FROM email_accounts WHERE id = ?', [id])
@@ -43,12 +43,12 @@ router.post('/accounts', async (req, res) => {
 router.put('/accounts/:id', async (req, res) => {
   try {
     const db = await getDb()
-    const { status, lastSync, scannedCount } = req.body
+    const { status, lastSync, scannedCount, appPassword } = req.body
 
     const now = new Date().toLocaleString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }).replace(/\//g, '-')
     run(
-      `UPDATE email_accounts SET status = COALESCE(?, status), last_sync = COALESCE(?, last_sync), scanned_count = COALESCE(?, scanned_count) WHERE id = ? AND user_id = ?`,
-      [status || null, lastSync || (status === 'connected' ? now : null), scannedCount || null, req.params.id, req.userId]
+      `UPDATE email_accounts SET status = COALESCE(?, status), last_sync = COALESCE(?, last_sync), scanned_count = COALESCE(?, scanned_count), app_password = COALESCE(?, app_password) WHERE id = ? AND user_id = ?`,
+      [status || null, lastSync || (status === 'connected' ? now : null), scannedCount || null, appPassword || null, req.params.id, req.userId]
     )
 
     const acc = queryOne('SELECT * FROM email_accounts WHERE id = ?', [req.params.id])
@@ -87,6 +87,22 @@ router.put('/operator', async (req, res) => {
     res.json(emails.filter(e => e.includes('@')))
   } catch (e) {
     res.status(500).json({ error: '保存运营邮箱失败' })
+  }
+})
+
+// 删除邮箱账号（硬删除，同时清理关联 OAuth token）
+router.delete('/accounts/:id', async (req, res) => {
+  try {
+    const acc = queryOne('SELECT * FROM email_accounts WHERE id = ? AND user_id = ?', [req.params.id, req.userId])
+    if (!acc) return res.status(404).json({ error: '邮箱账号不存在' })
+
+    run('DELETE FROM email_accounts WHERE id = ?', [acc.id])
+    run('DELETE FROM oauth_tokens WHERE email = ? AND user_id = ?', [acc.email, req.userId])
+
+    res.json({ deleted: true, id: acc.id, email: acc.email })
+  } catch (e) {
+    console.error(e)
+    res.status(500).json({ error: '删除邮箱失败' })
   }
 })
 

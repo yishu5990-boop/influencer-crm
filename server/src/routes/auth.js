@@ -71,6 +71,37 @@ router.post('/login', async (req, res) => {
   }
 })
 
+// 演示账号一键登录：自动创建/登录 demo 账号
+router.post('/demo', async (req, res) => {
+  try {
+    const db = await getDb()
+    const demoEmail = 'admin@crm.com'
+    const demoPassword = '7AayN6R9LtShXsFb'
+    const demoName = '演示账号'
+
+    let user = queryOne('SELECT * FROM users WHERE email = ?', [demoEmail])
+
+    if (!user) {
+      const id = 'user_demo'
+      const hash = await bcrypt.hash(demoPassword, 10)
+      run(
+        'INSERT INTO users (id, name, email, password, role) VALUES (?, ?, ?, ?, ?)',
+        [id, demoName, demoEmail, hash, '达人运营']
+      )
+      user = queryOne('SELECT * FROM users WHERE id = ?', [id])
+    }
+
+    const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, { expiresIn: '7d' })
+    res.json({
+      token,
+      user: { id: user.id, name: user.name, email: user.email, role: user.role, signature: user.signature },
+    })
+  } catch (e) {
+    console.error('演示登录失败:', e)
+    res.status(500).json({ error: '演示登录失败' })
+  }
+})
+
 // 获取当前用户信息
 router.get('/me', authMiddleware, async (req, res) => {
   try {

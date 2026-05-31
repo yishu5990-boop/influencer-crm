@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
-import { getEmailAccounts, saveEmailAccounts, syncGmail, getGmailAuthUrl, getGmailAuthStatus } from '../utils/storage'
+import { getEmailAccounts, saveEmailAccounts, deleteEmailAccount, syncGmail, getGmailAuthUrl, getGmailAuthStatus } from '../utils/storage'
 import { emails as emApi } from '../utils/api'
+import DiscoverModal from '../components/DiscoverModal'
 
 const STATUS_MAP = {
   connected: { label: '已连接', color: 'var(--success)', bg: 'var(--success-light)', dot: '● ' },
@@ -21,8 +22,11 @@ export default function EmailSettings() {
   const [loading, setLoading] = useState(true)
   const [showAddModal, setShowAddModal] = useState(false)
   const [showSyncModal, setShowSyncModal] = useState(false)
+  const [showDiscoverModal, setShowDiscoverModal] = useState(false)
   const [newEmail, setNewEmail] = useState('')
   const [newProvider, setNewProvider] = useState('Gmail')
+  const [newAppPassword, setNewAppPassword] = useState('')
+  const [showPasswordField, setShowPasswordField] = useState(false)
   const [syncResult, setSyncResult] = useState(null)
   const [syncing, setSyncing] = useState(false)
   const [openModal, setOpenModal] = useState(null)
@@ -37,12 +41,37 @@ export default function EmailSettings() {
     checkOAuthCallback()
   }, [])
 
-  // 检测 Google OAuth 回调（URL 参数 oauth=success/error）
-  const checkOAuthCallback = () => {
+  // 检测 Google OAuth 回调（URL 参数 oauth=success/error&email=xxx）
+  const checkOAuthCallback = async () => {
     const params = new URLSearchParams(window.location.search)
     const result = params.get('oauth')
     const msg = params.get('msg')
-    if (result === 'success') {
+    const oauthEmail = params.get('email')
+
+    if (result === 'success' && oauthEmail) {
+      // 每账号 OAuth 成功 → 自动保存并同步
+      const pendingEmail = localStorage.getItem('pending_oauth_email')
+      localStorage.removeItem('pending_oauth_email')
+      const targetEmail = oauthEmail || pendingEmail
+      window.history.replaceState({}, '', '/email-settings')
+
+      if (targetEmail) {
+        setOauthMsg(`✅ ${targetEmail} 授权成功，正在自动同步...`)
+        setSyncing(true)
+        try {
+          // 保存账号到数据库
+          await emApi.addAccount({ email: targetEmail, provider: 'Gmail' })
+          // 同步邮件
+          const syncResult = await syncGmail(targetEmail)
+          setOauthMsg(`✅ ${targetEmail} 授权并同步完成${syncResult.new ? '，新增 ' + syncResult.new + ' 封邮件' : ''}`)
+          await loadAccounts()
+        } catch (e) {
+          setOauthMsg(`⚠️ ${targetEmail} 授权成功，但同步失败: ${e.message}`)
+        } finally {
+          setSyncing(false)
+        }
+      }
+    } else if (result === 'success') {
       setOauthMsg('Google 授权成功！你可以点击「同步邮件」开始同步')
       window.history.replaceState({}, '', '/email-settings')
     } else if (result === 'error') {
@@ -60,11 +89,15 @@ export default function EmailSettings() {
     }
   }
 
-  // Google OAuth 授权
-  const handleGoogleAuth = async () => {
+  // Google OAuth 授权（email 可选：传了就是每账号授权，不传就是全局授权）
+  const handleGoogleAuth = async (email) => {
     setOauthConnecting(true)
     try {
-      const { url } = await getGmailAuthUrl()
+      const { url } = await getGmailAuthUrl(email)
+      // 把待授权邮箱存到 localStorage，回调后用
+      if (email) {
+        localStorage.setItem('pending_oauth_email', email)
+      }
       // 用弹窗打开 Google 授权页
       const width = 600, height = 700
       const left = (screen.width - width) / 2
@@ -135,11 +168,11 @@ export default function EmailSettings() {
     setSyncResult(null)
 
     try {
-      // 1. 先保存邮箱账号到数据库
-      const saved = await emApi.addAccount({ email: newEmail.trim(), provider: newProvider })
+      // 1. 先保存邮箱账号到数据库（含应用专用密码）
+      const saved = await emApi.addAccount({ email: newEmail.trim(), provider: newProvider, appPassword: newAppPassword })
 
       // 2. 触发 Gmail IMAP 同步
-      const result = await syncGmail()
+      const result = await syncGmail(newEmail.trim())
 
       setSyncResult(result)
 
@@ -162,6 +195,8 @@ export default function EmailSettings() {
     setShowSyncModal(false)
     setNewEmail('')
     setNewProvider('Gmail')
+    setNewAppPassword('')
+    setShowPasswordField(false)
     setSyncResult(null)
   }
 
@@ -169,10 +204,22 @@ export default function EmailSettings() {
     await persistAndSync(accounts.map((a) => (a.id === id ? { ...a, status: 'disconnected' } : a)))
   }
 
+  const handleDeleteAccount = async (acc) => {
+    if (!window.confirm(`确定要永久删除「${acc.email}」吗？\n\n该操作将同时删除该邮箱的 OAuth 授权凭据，且无法恢复。`)) return
+    try {
+      await deleteEmailAccount(acc.id)
+      setAccounts((prev) => prev.filter((a) => a.id !== acc.id))
+    } catch (e) {
+      alert('删除失败：' + (e.message || '未知错误'))
+    }
+  }
+
   const handleReconnect = async (id) => {
     setSyncing(true)
+    const account = accounts.find(a => a.id === id)
+    const email = account?.email || ''
     try {
-      const result = await syncGmail()
+      const result = await syncGmail(email)
       const now = new Date().toLocaleString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }).replace(/\//g, '-')
       await persistAndSync(accounts.map((a) => (a.id === id ? { ...a, status: result.error ? 'need_reauth' : 'connected', last_sync: now, scanned_count: (a.scanned_count || 0) + (result.new || 0) } : a)))
     } catch (e) {
@@ -206,6 +253,11 @@ export default function EmailSettings() {
           </span>
           {acc.status === 'connected' && <button className="btn btn-outline btn-sm" onClick={() => handleDisconnect(acc.id)}>断开</button>}
           {acc.status !== 'connected' && <button className="btn btn-primary btn-sm" onClick={() => handleReconnect(acc.id)} disabled={syncing}>{acc.status === 'need_reauth' ? '重新授权' : '重新连接'}</button>}
+          <span onClick={() => handleDeleteAccount(acc)} title="永久删除"
+            style={{ cursor: 'pointer', fontSize: 16, color: 'var(--gray-300)', padding: '2px 4px', borderRadius: 4, transition: 'all 0.15s' }}
+            onMouseOver={(e) => { e.currentTarget.style.color = '#ef4444'; e.currentTarget.style.background = '#fee2e2' }}
+            onMouseOut={(e) => { e.currentTarget.style.color = 'var(--gray-300)'; e.currentTarget.style.background = 'transparent' }}
+          >×</span>
         </div>
       </div>
     )
@@ -222,7 +274,10 @@ export default function EmailSettings() {
           <h1 className="page-title">邮箱设置</h1>
           <p className="page-subtitle">管理已连接的邮箱账号，查看同步状态</p>
         </div>
-        <button className="btn btn-primary" onClick={() => setShowAddModal(true)}>+ 添加邮箱</button>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button className="btn btn-primary" onClick={() => setShowAddModal(true)}>+ 添加邮箱</button>
+          <button className="btn btn-outline" onClick={() => setShowDiscoverModal(true)}>🔍 发现达人</button>
+        </div>
       </div>
 
       {oauthMsg && (
@@ -325,54 +380,78 @@ export default function EmailSettings() {
       )}
 
       {showAddModal && (
-        <div className="modal-overlay" onClick={() => { setShowAddModal(false); setNewEmail('') }}>
+        <div className="modal-overlay" onClick={() => { setShowAddModal(false); setNewEmail(''); setNewAppPassword(''); setShowPasswordField(false) }}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
             <h3>添加邮箱</h3>
-            <p style={{ fontSize: 13, color: 'var(--gray-500)', marginBottom: 16 }}>通过 Google OAuth 2.0 安全授权，系统将通过 IMAP 自动扫描达人相关邮件</p>
+            <p style={{ fontSize: 13, color: 'var(--gray-500)', marginBottom: 16 }}>连接 Gmail 后，系统将通过 IMAP 自动扫描达人相关邮件</p>
 
-            {!oauthStatus?.authorized ? (
+            <div className="form-group">
+              <label>邮箱地址</label>
+              <input type="email" value={newEmail} onChange={(e) => setNewEmail(e.target.value)} placeholder="your-email@gmail.com" />
+            </div>
+            <div className="form-group">
+              <label>邮箱服务商</label>
+              <select value={newProvider} onChange={(e) => setNewProvider(e.target.value)}>
+                <option value="Gmail">Gmail</option>
+                <option value="Outlook">Outlook / Hotmail</option>
+                <option value="iCloud">iCloud / Apple Mail</option>
+                <option value="Yahoo">Yahoo Mail</option>
+              </select>
+            </div>
+
+            {newProvider === 'Gmail' && (
               <>
-                <div style={{ textAlign: 'center', padding: '24px 0' }}>
-                  <div style={{ fontSize: 48, marginBottom: 12 }}>🔐</div>
-                  <p style={{ fontSize: 14, color: 'var(--gray-600)', marginBottom: 20 }}>
-                    需要先授权 Google 账号才能添加邮箱
-                  </p>
-                  <button className="btn btn-primary" onClick={() => { setShowAddModal(false); handleGoogleAuth() }} disabled={oauthConnecting} style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-                    {oauthConnecting ? (
-                      <>⏳ 等待授权中...</>
-                    ) : (
-                      <><span style={{ fontSize: 18 }}>G</span> 前往 Google 授权</>
-                    )}
-                  </button>
-                </div>
-                <div className="modal-actions">
-                  <button className="btn btn-outline" onClick={() => { setShowAddModal(false); setNewEmail('') }}>取消</button>
-                </div>
-              </>
-            ) : (
-              <>
-                <div className="form-group">
-                  <label>邮箱地址</label>
-                  <input type="email" value={newEmail} onChange={(e) => setNewEmail(e.target.value)} placeholder="your-email@gmail.com" />
-                </div>
-                <div className="form-group">
-                  <label>邮箱服务商</label>
-                  <select value={newProvider} onChange={(e) => setNewProvider(e.target.value)}>
-                    <option value="Gmail">Gmail</option>
-                    <option value="Outlook">Outlook / Hotmail</option>
-                    <option value="iCloud">iCloud / Apple Mail</option>
-                    <option value="Yahoo">Yahoo Mail</option>
-                  </select>
-                </div>
-                <p style={{ fontSize: 12, color: 'var(--gray-400)', marginTop: 8 }}>
-                  已通过 Google OAuth 2.0 授权，无需单独配置应用专用密码
-                </p>
-                <div className="modal-actions">
-                  <button className="btn btn-outline" onClick={() => { setShowAddModal(false); setNewEmail('') }}>取消</button>
-                  <button className="btn btn-primary" onClick={handleAddAndSync} disabled={!newEmail.trim()}>下一步：同步邮件</button>
-                </div>
+                {!showPasswordField ? (
+                  <div style={{ textAlign: 'center', padding: '8px 0 16px' }}>
+                    <button
+                      className="btn btn-primary"
+                      style={{ width: '100%', padding: '12px 0', fontSize: 15, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
+                      onClick={() => { setShowAddModal(false); handleGoogleAuth(newEmail.trim()) }}
+                      disabled={!newEmail.trim() || oauthConnecting}
+                    >
+                      <span style={{ fontSize: 18 }}>G</span>
+                      {oauthConnecting ? '⏳ 等待授权...' : '一键连接 Google 账号'}
+                    </button>
+                    <p style={{ fontSize: 12, color: 'var(--gray-400)', marginTop: 8 }}>
+                      点击后在新窗口中登录该 Gmail 账号并授权即可
+                    </p>
+                    <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid var(--gray-200)' }}>
+                      <button
+                        className="btn btn-outline btn-sm"
+                        onClick={() => setShowPasswordField(true)}
+                        style={{ fontSize: 12, color: 'var(--gray-500)' }}
+                      >
+                        或使用应用专用密码
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="form-group">
+                    <label>应用专用密码</label>
+                    <input
+                      type="password"
+                      value={newAppPassword}
+                      onChange={(e) => setNewAppPassword(e.target.value)}
+                      placeholder="16位 Google 应用专用密码"
+                      autoComplete="off"
+                    />
+                    <p style={{ fontSize: 11, color: 'var(--gray-400)', marginTop: 4 }}>
+                      前往 Google 账号 → 安全 → 两步验证 → 应用专用密码，生成后粘贴到这里
+                    </p>
+                  </div>
+                )}
               </>
             )}
+
+            <div className="modal-actions">
+              <button className="btn btn-outline" onClick={() => { setShowAddModal(false); setNewEmail(''); setNewAppPassword(''); setShowPasswordField(false) }}>取消</button>
+              {newProvider === 'Gmail' && showPasswordField && (
+                <button className="btn btn-primary" onClick={handleAddAndSync} disabled={!newEmail.trim()}>保存并同步</button>
+              )}
+              {newProvider !== 'Gmail' && (
+                <button className="btn btn-primary" onClick={handleAddAndSync} disabled={!newEmail.trim()}>保存</button>
+              )}
+            </div>
           </div>
         </div>
       )}
@@ -425,6 +504,10 @@ export default function EmailSettings() {
             )}
           </div>
         </div>
+      )}
+
+      {showDiscoverModal && (
+        <DiscoverModal onClose={() => setShowDiscoverModal(false)} accounts={accounts} />
       )}
     </div>
   )

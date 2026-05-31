@@ -89,6 +89,16 @@ export async function updateInfluencer(id, updates) {
   }
 }
 
+export async function deleteInfluencer(id) {
+  try { return await infApi.remove(id) }
+  catch {
+    const data = getLegacyData()
+    data.influencers = data.influencers.filter(i => i.id !== id)
+    setLocal(STORAGE_KEY, data)
+    return { deleted: true }
+  }
+}
+
 export async function createInfluencer(data) {
   try { return await infApi.create(data) }
   catch {
@@ -139,6 +149,10 @@ export async function deleteTimelineEntry(infId, entryId) {
 export async function getEmailAccounts() {
   try { return await emApi.accounts() }
   catch { return getLocal('influencer_crm_email_accounts') || [] }
+}
+
+export async function deleteEmailAccount(id) {
+  return await emApi.removeAccount(id)
 }
 
 export async function saveEmailAccounts(accounts) {
@@ -214,16 +228,26 @@ export async function saveAiSummary(infId, summary) {
 
 // ===== Gmail 同步 =====
 
-export async function syncGmail() {
-  return await gmailApi.sync()
+export async function syncGmail(email) {
+  return await gmailApi.sync(email)
 }
 
-export async function getGmailAuthUrl() {
-  return await gmailApi.authUrl()
+export async function getGmailAuthUrl(email) {
+  return await gmailApi.authUrl(email)
 }
 
-export async function getGmailAuthStatus() {
-  return await gmailApi.authStatus()
+export async function getGmailAuthStatus(email) {
+  return await gmailApi.authStatus(email)
+}
+
+// ===== 发现达人 =====
+
+export async function discoverContacts(email) {
+  return await gmailApi.discover(email)
+}
+
+export async function importInfluencers(contacts) {
+  return await infApi.importBatch(contacts)
 }
 
 // ===== 获取旧版全量数据（兼容旧代码） =====

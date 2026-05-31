@@ -614,4 +614,18 @@ router.get('/summary/:influencerId', async (req, res) => {
   }
 })
 
+// 删除已保存的 AI 摘要
+router.delete('/summary/:influencerId', async (req, res) => {
+  try {
+    const row = queryOne('SELECT * FROM ai_summaries WHERE influencer_id = ?', [req.params.influencerId])
+    if (!row) return res.status(404).json({ error: '没有已保存的 AI 摘要' })
+
+    run('DELETE FROM ai_summaries WHERE influencer_id = ?', [req.params.influencerId])
+    res.json({ deleted: true, influencer_id: req.params.influencerId })
+  } catch (e) {
+    console.error(e)
+    res.status(500).json({ error: '删除 AI 摘要失败' })
+  }
+})
+
 export default router

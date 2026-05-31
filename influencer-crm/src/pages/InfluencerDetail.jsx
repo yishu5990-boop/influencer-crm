@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import SearchBar from '../components/SearchBar'
 import { PHASES } from '../data/mockData'
-import { getInfluencers, getInfluencer, getTimeline, updateInfluencer, addTimelineEntry, deleteTimelineEntry, getOperatorEmails, getAiSummary, saveAiSummary } from '../utils/storage'
+import { getInfluencers, getInfluencer, getTimeline, updateInfluencer, addTimelineEntry, deleteTimelineEntry, deleteInfluencer, getOperatorEmails, getAiSummary, saveAiSummary } from '../utils/storage'
 import { detectPhaseSuggestion } from '../utils/aiSuggestions'
 import { ai as aiApi } from '../utils/api'
 
@@ -120,12 +120,10 @@ export default function InfluencerDetail() {
       from: localInf.phase,
       to: suggestion.suggestedPhase,
     }
-    const today = new Date().toISOString().split('T')[0]
-    await updateInfluencer(id, { phase: suggestion.suggestedPhase, lastContact: today })
+    await updateInfluencer(id, { phase: suggestion.suggestedPhase })
     setLocalInf((prev) => ({
       ...prev,
       phase: suggestion.suggestedPhase,
-      lastContact: today,
       phaseHistory: [...(prev.phaseHistory || []), historyEntry],
     }))
     setDismissedSuggestion(true)
@@ -222,7 +220,6 @@ export default function InfluencerDetail() {
   }, [timeline, operatorEmails])
 
   const handlePhaseSave = async () => {
-    const today = new Date().toISOString().split('T')[0]
     if (selectedPhase !== localInf.phase) {
       const historyEntry = {
         id: 'ph_' + Date.now(),
@@ -230,13 +227,13 @@ export default function InfluencerDetail() {
         from: localInf.phase, to: selectedPhase,
       }
       setLocalInf((prev) => ({
-        ...prev, phase: selectedPhase, reportBrand, reportNote, lastContact: today,
+        ...prev, phase: selectedPhase, reportBrand, reportNote,
         phaseHistory: [...(prev.phaseHistory || []), historyEntry],
       }))
     } else {
       setLocalInf((prev) => ({ ...prev, reportBrand, reportNote }))
     }
-    await updateInfluencer(id, { phase: selectedPhase, reportBrand, reportNote, lastContact: today })
+    await updateInfluencer(id, { phase: selectedPhase, reportBrand, reportNote })
     setShowPhaseModal(false)
   }
 
@@ -270,6 +267,16 @@ export default function InfluencerDetail() {
   const handleDeleteEntry = async (entryId) => {
     await deleteTimelineEntry(id, entryId)
     setTimelineVersion((v) => v + 1)
+  }
+
+  const handleDeleteInfluencer = async () => {
+    if (!window.confirm(`确定要删除「${localInf.name}」吗？\n\n该操作将同时删除所有邮件记录、阶段历史和 AI 总结，且无法恢复。`)) return
+    try {
+      await deleteInfluencer(id)
+      navigate('/')
+    } catch (e) {
+      alert('删除失败：' + (e.message || '未知错误'))
+    }
   }
 
   const handleAiAnalyze = async () => {
@@ -392,6 +399,13 @@ export default function InfluencerDetail() {
                 onClick={() => { setSelectedPhase(localInf.phase); setReportBrand(localInf.reportBrand || ''); setReportNote(localInf.reportNote || ''); setShowPhaseModal(true) }}>
                 {localInf.phase} ✎
               </span>
+              <div style={{ marginTop: 8 }}>
+                <button className="btn btn-outline btn-sm" onClick={handleDeleteInfluencer}
+                  style={{ fontSize: 11, color: 'var(--gray-400)', borderColor: 'var(--gray-200)' }}
+                  onMouseOver={(e) => { e.currentTarget.style.color = '#ef4444'; e.currentTarget.style.borderColor = '#fecaca'; e.currentTarget.style.background = '#fef2f2' }}
+                  onMouseOut={(e) => { e.currentTarget.style.color = 'var(--gray-400)'; e.currentTarget.style.borderColor = 'var(--gray-200)'; e.currentTarget.style.background = 'transparent' }}
+                >🗑 删除达人</button>
+              </div>
               <div style={{ marginTop: 8 }}>
                 <button className="btn btn-outline btn-sm" onClick={handlePhaseSuggestion} disabled={suggestionLoading} style={{ fontSize: 11 }}>
                   {suggestionLoading ? '⏳ AI 分析中...' : '🤖 AI 阶段建议'}
@@ -544,7 +558,17 @@ export default function InfluencerDetail() {
 
         {aiResult && (
           <div style={{ padding: '16px 20px', marginBottom: 16, background: '#f0fdf4', borderRadius: 'var(--radius)', border: '1px solid #86efac' }}>
-            <div style={{ fontSize: 13, fontWeight: 600, color: '#065f46', marginBottom: 12 }}>🤖 AI 邮件分析结果</div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+              <span style={{ fontSize: 13, fontWeight: 600, color: '#065f46' }}>🤖 AI 邮件分析结果</span>
+              <span onClick={async () => {
+                await aiApi.removeSummary(id)
+                setAiResult(null)
+              }} title="删除此分析结果"
+                style={{ cursor: 'pointer', fontSize: 16, color: 'var(--gray-300)', padding: '2px 6px', borderRadius: 4, transition: 'all 0.15s' }}
+                onMouseOver={(e) => { e.currentTarget.style.color = '#ef4444'; e.currentTarget.style.background = '#fee2e2' }}
+                onMouseOut={(e) => { e.currentTarget.style.color = 'var(--gray-300)'; e.currentTarget.style.background = 'transparent' }}
+              >×</span>
+            </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px 24px', fontSize: 13 }}>
               <div><span style={{ color: 'var(--gray-400)' }}>摘要：</span>{aiResult.一句话摘要}</div>
               <div><span style={{ color: 'var(--gray-400)' }}>状态：</span>{aiResult.当前合作状态}</div>

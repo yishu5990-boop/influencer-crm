@@ -33,13 +33,20 @@ export function AuthProvider({ children }) {
     return result
   }, [])
 
+  const demoLogin = useCallback(async () => {
+    const result = await auth.demo()
+    setToken(result.token)
+    setUser(result.user)
+    return result
+  }, [])
+
   const logout = useCallback(() => {
     clearToken()
     setUser(null)
   }, [])
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, register, demoLogin, logout }}>
       {children}
     </AuthContext.Provider>
   )

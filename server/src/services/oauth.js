@@ -10,10 +10,14 @@ const TOKEN_URL = 'https://oauth2.googleapis.com/token'
 const SCOPE = 'https://mail.google.com/'
 
 // 生成 Google OAuth 授权 URL
-export function getAuthUrl(userId) {
+// email 参数可选：如果不传则使用 process.env.GMAIL_EMAIL（兼容旧版）
+export function getAuthUrl(userId, email) {
   if (!CLIENT_ID || !REDIRECT_URI) {
     throw new Error('未配置 Google OAuth 凭据')
   }
+
+  // state 编码 userId 和 email（用 ::: 分隔），回调时用于保存 token
+  const state = `${userId}:::${email || ''}`
 
   const params = new URLSearchParams({
     client_id: CLIENT_ID,
@@ -22,10 +26,20 @@ export function getAuthUrl(userId) {
     scope: SCOPE,
     access_type: 'offline',        // 获取 refresh_token
     prompt: 'consent',             // 强制每次显示同意画面（确保拿到 refresh_token）
-    state: userId,                 // 回调时带回 userId
+    state,                         // 回调时带回 userId + email
   })
 
   return `${AUTH_URL}?${params.toString()}`
+}
+
+// 解析 OAuth state 参数，返回 { userId, email }
+export function parseOAuthState(state) {
+  if (!state) return { userId: null, email: null }
+  const parts = state.split(':::')
+  return {
+    userId: parts[0] || null,
+    email: parts[1] || null,
+  }
 }
 
 // 用授权码换取 token

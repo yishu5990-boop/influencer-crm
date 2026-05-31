@@ -102,7 +102,7 @@ router.put('/:id', async (req, res) => {
     const inf = queryOne('SELECT * FROM influencers WHERE id = ? AND user_id = ?', [req.params.id, req.userId])
     if (!inf) return res.status(404).json({ error: '达人不存在' })
 
-    const { name, account, phase, reportBrand, reportNote, price, emails } = req.body
+    const { name, account, phase, reportBrand, reportNote, price, emails, lastContact } = req.body
 
     // 阶段变更记录历史
     if (phase && phase !== inf.phase) {
@@ -117,7 +117,6 @@ router.put('/:id', async (req, res) => {
     // 统一使用 !== undefined 判断，允许空字符串清空字段
     const coalesce = (val) => val !== undefined ? val : null
 
-    const today = new Date().toISOString().split('T')[0]
     run(
       `UPDATE influencers SET
         name = COALESCE(?, name),
@@ -126,13 +125,13 @@ router.put('/:id', async (req, res) => {
         report_brand = COALESCE(?, report_brand),
         report_note = COALESCE(?, report_note),
         price = COALESCE(?, price),
-        last_contact = ?,
+        last_contact = COALESCE(?, last_contact),
         updated_at = datetime('now', 'localtime')
       WHERE id = ?`,
       [
         coalesce(name), coalesce(account), coalesce(phase),
         coalesce(reportBrand), coalesce(reportNote), coalesce(price),
-        today, inf.id
+        lastContact || null, inf.id
       ]
     )
 
@@ -152,6 +151,69 @@ router.put('/:id', async (req, res) => {
   } catch (e) {
     console.error(e)
     res.status(500).json({ error: '更新达人失败' })
+  }
+})
+
+// 批量导入达人（从发现达人列表中选择导入）
+router.post('/batch', async (req, res) => {
+  try {
+    const { contacts } = req.body
+    if (!Array.isArray(contacts) || contacts.length === 0) {
+      return res.status(400).json({ error: '请选择要导入的达人' })
+    }
+
+    const today = new Date().toISOString().split('T')[0]
+    const created = []
+    let skipped = 0
+
+    for (const contact of contacts) {
+      const { email, displayName } = contact
+      if (!email) continue
+
+      // 跳过已存在的邮箱
+      const existing = queryOne(
+        'SELECT influencer_id FROM influencer_emails WHERE LOWER(email) = ?',
+        [email.toLowerCase().trim()]
+      )
+      if (existing) { skipped++; continue }
+
+      const name = (displayName || email.split('@')[0]).trim()
+      const account = '@' + email.split('@')[0].replace(/[._]/g, '').toLowerCase()
+      const id = 'inf_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6)
+
+      run(
+        'INSERT INTO influencers (id, user_id, name, account, phase, last_contact) VALUES (?, ?, ?, ?, ?, ?)',
+        [id, req.userId, name, account, '初洽', today]
+      )
+      run('INSERT INTO influencer_emails (influencer_id, email) VALUES (?, ?)', [id, email.trim()])
+
+      created.push({ id, name, account, email: email.trim(), phase: '初洽' })
+    }
+
+    res.json({ created, total: contacts.length, imported: created.length, skipped })
+  } catch (e) {
+    console.error(e)
+    res.status(500).json({ error: '批量导入达人失败' })
+  }
+})
+
+// 删除达人
+router.delete('/:id', async (req, res) => {
+  try {
+    const inf = queryOne('SELECT * FROM influencers WHERE id = ? AND user_id = ?', [req.params.id, req.userId])
+    if (!inf) return res.status(404).json({ error: '达人不存在' })
+
+    // 级联删除关联数据（influencer_emails / timeline_entries / phase_history / ai_summaries 有 ON DELETE CASCADE）
+    run('DELETE FROM influencer_emails WHERE influencer_id = ?', [inf.id])
+    run('DELETE FROM timeline_entries WHERE influencer_id = ?', [inf.id])
+    run('DELETE FROM phase_history WHERE influencer_id = ?', [inf.id])
+    run('DELETE FROM ai_summaries WHERE influencer_id = ?', [inf.id])
+    run('DELETE FROM influencers WHERE id = ?', [inf.id])
+
+    res.json({ deleted: true, id: inf.id, name: inf.name })
+  } catch (e) {
+    console.error(e)
+    res.status(500).json({ error: '删除达人失败' })
   }
 })
 
